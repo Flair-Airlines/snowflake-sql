@@ -1,0 +1,94 @@
+
+CREATE STORAGE INTEGRATION connect_storage_integration
+  TYPE = EXTERNAL_STAGE
+  STORAGE_PROVIDER = S3
+  ENABLED = TRUE
+  STORAGE_AWS_ROLE_ARN = 'arn:aws:iam::071141838928:role/snowflake_staging'
+  STORAGE_ALLOWED_LOCATIONS = ('s3://amazon-connect-c586834a0493/connect/FlairCC1/Reports/');
+
+  DESC INTEGRATION connect_storage_integration;
+
+USE SCHEMA EXTERNAL_SOURCES.AWS_CONNECT;
+
+CREATE OR REPLACE STAGE connect_stage
+URL = 's3://amazon-connect-c586834a0493/connect/FlairCC1/Reports/'
+STORAGE_INTEGRATION = connect_storage_integration
+
+;
+
+
+SELECT *
+FROM INFORMATION_SCHEMA.STAGES
+WHERE STAGE_NAME = 'CONNECT_STAGE';
+
+
+CREATE OR REPLACE EXTERNAL TABLE DAILY_REPORT_CSV (
+  queue STRING as (nullif(value:c1,'')::STRING),
+  agent STRING as (nullif(value:c2,'')::STRING),
+  routing_profile STRING as (nullif(value:c3,'')::STRING),
+  channel STRING as (nullif(value:c4,'')::STRING),
+  startinterval TIMESTAMP_NTZ as (nullif(value:c5,'')::TIMESTAMP_NTZ),
+  endinterval TIMESTAMP_NTZ as (nullif(value:c6,'')::TIMESTAMP_NTZ),
+  agent_answer_rate STRING as (nullif(value:c7,'')::STRING),
+  agent_api_conecting_time STRING as (nullif(value:c8,'')::STRING),
+  agent_callback_connecting_time STRING as (nullif(value:c9,'')::STRING),
+  agent_incoming_connecting_time STRING as (nullif(value:c10,'')::STRING),
+  contacts_missed STRING as (nullif(value:c11,'')::STRING),
+  agent_outbound_connecting_time STRING as (nullif(value:c12,'')::STRING),
+  avg_agent_api_connecting_time STRING as (nullif(value:c13,'')::STRING),
+  avg_agent_calllback_connecting_time STRING as (nullif(value:c14,'')::STRING),
+  avg_agent_incoming_connecting_time STRING as (nullif(value:c15,'')::STRING),
+  avg_agent_outbound_connecting_time STRING as (nullif(value:c16,'')::STRING),
+  contacts_abandoned_20_seconds STRING as (nullif(value:c17,'')::STRING),
+  contacts_answered_20_seconds STRING as (nullif(value:c18,'')::STRING),
+  service_level_20_seconds STRING as (nullif(value:c19,'')::STRING),
+  after_contact_work_time STRING as (nullif(value:c20,'')::STRING),
+  agent_interaction_hold_time STRING as (nullif(value:c21,'')::STRING),
+  agent_interaction_time STRING as (nullif(value:c22,'')::STRING),
+  api_contacts STRING as (nullif(value:c23,'')::STRING),
+  api_contacts_handled STRING as  (nullif(value:c24,'')::STRING),
+  avg_after_contact_work_time STRING as (nullif(value:c25,'')::STRING),
+  avg_agent_interaction_customer_hold_time STRING as (nullif(value:c26,'')::STRING),
+  avg_agent_interaction_time STRING as (nullif(value:c27,'')::STRING),
+  avg_customer_hold_time STRING as (nullif(value:c28,'')::STRING),
+  avg_handle_time STRING as (nullif(value:c29,'')::STRING),
+  avg_outbound_after_contact_work_time STRING as (nullif(value:c30,'')::STRING),
+  avg_outbound_agent_interaction_time STRING as (nullif(value:c31,'')::STRING),
+  avg_queue_abandon_time STRING as (nullif(value:c32,'')::STRING),
+  avg_queue_answer_time STRING as (nullif(value:c33,'')::STRING),
+  callback_contacts STRING as (nullif(value:c34,'')::STRING),
+  callback_contacts_handled STRING as (nullif(value:c35,'')::STRING),
+  contact_flow_time STRING as (nullif(value:c36,'')::STRING),
+  contact_handle_time STRING as (nullif(value:c37,'')::STRING),
+  contacts_abandoned STRING as (nullif(value:c38,'')::STRING),
+  contacts_agent_hungup_first STRING as (nullif(value:c39,'')::STRING),
+  contacts_handled STRING as (nullif(value:c40,'')::STRING),
+  contacts_handled_incoming STRING as (nullif(value:c41,'')::STRING),
+  contacts_handled_outbound STRING as (nullif(value:c42,'')::STRING),
+  contact_handled_outbound STRING as (nullif(value:c43,'')::STRING),
+  contacts_hold_agent_disconnect STRING as (nullif(value:c44,'')::STRING),
+  contacts_hold_customer_disconnect STRING as (nullif(value:c45,'')::STRING),
+  contacts_hold_disconnect STRING as (nullif(value:c46,'')::STRING),
+  contacts_incoming STRING as (nullif(value:c47,'')::STRING)  ,
+  contacts_put_on_hold STRING as (nullif(value:c48,'')::STRING),
+  contacts_queued STRING as (nullif(value:c49,'')::STRING),
+  contacts_transferred_in STRING as (nullif(value:c50,'')::STRING),
+  contacts_transferred_from_queue STRING as (nullif(value:c51,'')::STRING),
+  contacts_transferred_out STRING as (nullif(value:c52,'')::STRING),
+  contacts_transferred_out_ext STRING as (nullif(value:c53,'')::STRING),
+  contacts_transferred_out_queue STRING as (nullif(value:c54,'')::STRING),
+  contacts_transferred_out_int STRING as (nullif(value:c55,'')::STRING),
+  customer_hold_time STRING as (nullif(value:c56,'')::STRING),
+  maximum_queue_time STRING as (nullif(value:c57,'')::STRING),
+  contacts_transferred_in_by_agent STRING as (nullif(value:c58,'')::STRING),
+  contacts_transferred_out_by_agent STRING as (nullif(value:c59,'')::STRING)
+  
+)
+WITH LOCATION = @CONNECT_STAGE
+FILE_FORMAT = (
+  TYPE = 'CSV'
+  FIELD_DELIMITER = ','
+  SKIP_HEADER = 1
+);
+
+show external tables

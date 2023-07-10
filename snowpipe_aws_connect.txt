@@ -1,0 +1,61 @@
+CREATE or replace STORAGE INTEGRATION aws_connect_kinesis_storage_integration
+  TYPE = EXTERNAL_STAGE
+  STORAGE_PROVIDER = S3
+  ENABLED = TRUE
+  STORAGE_AWS_ROLE_ARN = 'arn:aws:iam::071141838928:role/snowflake_staging'
+  STORAGE_ALLOWED_LOCATIONS = ('s3://amazonconnect-parquet-ctr/2023');
+
+  DESC INTEGRATION aws_connect_kinesis_storage_integration;
+
+CREATE OR REPLACE FILE FORMAT my_parquet_format
+  TYPE = PARQUET
+  COMPRESSION = SNAPPY;
+
+  
+CREATE OR REPLACE STAGE aws_connect_kinesis_stage
+    URL = 's3://amazonconnect-parquet-ctr/2023/'
+    STORAGE_INTEGRATION = aws_connect_kinesis_storage_integration
+ 
+
+SHOW stages;
+
+SELECT generate_column_description(ARRAY_AGG(OBJECT_CONSTRUCT(*)), 'table')
+  FROM TABLE(
+    INFER_SCHEMA(
+      LOCATION=>'@aws_connect_kinesis_stage'
+      , FILE_FORMAT =>  'my_parquet_format'
+      , IGNORE_CASE=>TRUE
+      )
+    );
+
+
+CREATE TABLE aws_connect_ctr_json
+USING TEMPLATE (
+SELECT ARRAY_AGG(OBJECT_CONSTRUCT(*))
+  FROM TABLE(
+  INFER_SCHEMA(
+  LOCATION => '@aws_connect_kinesis_stage'
+  , FILE_FORMAT => 'my_parquet_format'
+  , IGNORE_CASE => TRUE 
+) 
+)
+);
+
+COPY INTO aws_connect_ctr_json
+from @aws_connect_kinesis_stage
+FILE_FORMAT = 'my_parquet_format'
+MATCH_BY_COLUMN_NAME=CASE_INSENSITIVE
+
+
+    
+CREATE PIPE aws_connect_ctr_pipe
+    AUTO_INGEST = TRUE
+    AS
+    COPY INTO aws_connect_ctr_json
+    FROM @aws_connect_kinesis_stage
+    FILE_FORMAT = 'my_parquet_format'
+    MATCH_BY_COLUMN_NAME=CASE_INSENSITIVE
+
+ SELECT  SYSTEM$PIPE_STATUS('aws_connect_ctr_pipe');
+
+
